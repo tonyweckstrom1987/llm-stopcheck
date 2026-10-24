@@ -1,0 +1,43 @@
+name: Julkaise PyPI:hin
+
+# Ajetaan vain kun GitHubissa julkaistaan release. PyPI Trusted Publishing (OIDC): ei salaisuuksia repossa.
+# Ennen ensimmaista julkaisua: PyPI -> Publishing -> lisaa "pending publisher" (omistaja tonyweckstrom1987,
+# repo llm-stopcheck, workflow julkaise.yml, environment pypi).
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  rakenna:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - name: Testit
+        run: python -m unittest discover -s tests -t .
+      - name: Rakenna paketti
+        run: |
+          python -m pip install build
+          python -m build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  julkaise:
+    needs: rakenna
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

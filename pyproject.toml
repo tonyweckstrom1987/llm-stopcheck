@@ -18,6 +18,12 @@ classifiers = [
 ]
 dependencies = []
 
+[project.urls]
+Homepage = "https://github.com/tonyweckstrom1987/llm-stopcheck"
+Source = "https://github.com/tonyweckstrom1987/llm-stopcheck"
+Issues = "https://github.com/tonyweckstrom1987/llm-stopcheck/issues"
+Changelog = "https://github.com/tonyweckstrom1987/llm-stopcheck/blob/main/CHANGELOG.md"
+
 [project.scripts]
 llm-stopcheck = "llm_stopcheck.cli:main"
 
