@@ -63,6 +63,17 @@ may be given (one output line each); the exit code is the worst one. Exit code 0
 `--allow-empty` accepts empty content (tool-call-only responses), `--version` prints the version. Log lines are sanitised (ASCII, no newlines, `=` replaced),
 so model output cannot forge a log record. Tests: `python -m unittest discover -s tests -t .`
 
+### Limitations
+
+- Only the first choice (`choices[0]`) is checked; other choices are ignored.
+- The input is a complete, parsed response in the OpenAI chat-completion shape (`choices[].message`).
+  Streams are not consumed, and a response without `choices` (for example a native Anthropic Messages
+  body) gives `malformed_response`.
+- The verdict rests on the finish reason, the content and the usage counts. Answer quality is not judged,
+  and tool-call arguments are not parsed: they are flagged only when the finish reason says the cap was hit.
+- `near_limit` / `at_limit` need both `max_tokens` and a completion token count in `usage`, and only
+  appear on responses that are otherwise ok.
+
 ## Miksi
 
 LLM-kutsu voi onnistua (HTTP 200) ja silti olla käyttökelvoton. Oikea tapaus: reasoning-malli käytti
@@ -76,9 +87,12 @@ pieneksi tuomioksi (`Verdict`), jonka koodi on vakaa ja jonka voi kirjata lokiin
 pip install .
 ```
 
-Ei riippuvuuksia, Python 3.10+.
+Ei riippuvuuksia, Python 3.10+. Asennus tehdään repon juuressa. Ilman asennusta CLI käynnistyy
+komennolla `PYTHONPATH=src python3 -m llm_stopcheck response.json` (sama kutsu on testattu).
 
 ## Käyttö
+
+`client` ja `log` ovat esimerkissä omiasi: mikä tahansa OpenAI-yhteensopiva asiakas ja lokittaja.
 
 ```python
 import llm_stopcheck as sc
@@ -134,6 +148,21 @@ poistumiskoodi on pahin niistä. Valitsimet: `--near-limit 0.9` muuttaa `near_li
 
 `format_record` puhdistaa arvot (vain ASCII, ei rivinvaihtoja, `=` korvataan), joten lokirivin
 väärentäminen mallin tuotoksella ei onnistu.
+
+## Rajoitukset
+
+- Vain ensimmäinen vaihtoehto (`choices[0]`) tarkistetaan, muut ohitetaan.
+- Syötteenä on valmis, jäsennetty vastaus OpenAI chat completion -muodossa (`choices[].message`).
+  Virtoja ei lueta, eikä vastaus ilman `choices`-kenttää (esim. Anthropicin oma Messages-muoto) kelpaa:
+  siitä tulee `malformed_response`.
+- Tuomio perustuu lopetussyyhyn, sisältöön ja `usage`-lukuihin. Vastauksen laatua ei arvioida, eikä
+  työkalukutsun argumentteja jäsennetä: ne merkitään keskeneräisiksi vain, kun lopetussyy kertoo rajan
+  täyttyneen.
+- Tyhjäksi sisällöksi lasketaan myös pelkät välilyönnit. Tuntematon lopetussyy antaa
+  `unknown_finish_reason`.
+- `near_limit` / `at_limit` vaativat sekä `max_tokens`-arvon että tokenimäärän `usage`-kentässä, ja ne
+  tulevat vain muuten kunnossa oleville vastauksille.
+- Kirjasto ei kutsu palveluntarjoajaa eikä hälytä; uudelleenyritys ja hälytys ovat kutsujan tehtäviä.
 
 ## Vaihtoehtoja ja miksi tämä
 
